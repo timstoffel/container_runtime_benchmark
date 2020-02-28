@@ -1,0 +1,20 @@
+---
+# tasks file for apachebench.repeat
+
+# The following includes are necessary, because loops don't work with blocks
+# So the tasks are nested in subtasks to create nested loops
+#
+# Nested Loops
+# Ressource Limit     - use apachebench__resource_limits and set bench_loop_target_reccource_limit
+# Runtime            - use apachebench__runtimes and set bench_loop_target_runtime
+# Container           - use apachebench__target_images and set bench_loop_target_image_name
+# Number of instances - use apachebench__target_count and set bench_loop_target_image_count   
+# repeat              - repeats the bechmark as long as apachebench__repeat and set bench_loop_repeat_number <- this file
+# benchmark           - do the real benchmark
+
+
+- name: Loop - repeat benchmark
+  include_tasks: benchmark.yml
+  with_sequence: count="{{ apachebench__repeat }}"
+  loop_control:
+    loop_var: bench_loop_repeat_number

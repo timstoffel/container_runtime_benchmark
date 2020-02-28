@@ -1,0 +1,7 @@
+---
+- hosts: cruncher
+  become: true
+  roles:
+    - apachebench
+  vars:
+    apachebench__clean_docker_cache: true

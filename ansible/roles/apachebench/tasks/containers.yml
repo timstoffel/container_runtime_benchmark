@@ -1,0 +1,30 @@
+---
+# tasks file for apachebench.runtime
+
+# The following includes are necessary, because loops don't work with blocks
+# So the tasks are nested in subtasks to create nested loops
+#
+# Nested Loops
+# Ressource Limit     - use apachebench__resource_limits and set bench_loop_target_reccource_limit
+# Runtime             - use apachebench__runtimes and set bench_loop_target_runtime
+# Container           - use apachebench__target_images + apachebench__not_nabla_images and set bench_loop_target_image_name  <- this file
+# Number of instances - use apachebench__target_count and set bench_loop_target_image_count   
+# repeat              - repeats the bechmark as long as apachebench__repeat and set bench_loop_repeat_number
+# benchmark           - do the real benchmark 
+
+# - name: Loop - different target image types
+#   include_tasks: instance_number.yml
+#   loop: "{{ apachebench__target_images }}"
+#   loop_control:
+#     loop_var: bench_loop_target_image_name
+
+- name: Loop - different target image types
+  include_tasks: instance_number.yml
+  loop: "{{ apachebench__not_nabla_images }}"
+  loop_control:
+    loop_var: bench_loop_target_image_name
+  when: bench_loop_target_runtime != 'runnc'
+
+- name: Reboot the machine
+  reboot:
+    reboot_timeout: 3600

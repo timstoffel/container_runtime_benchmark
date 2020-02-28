@@ -1,0 +1,28 @@
+---
+# defauts file for bench_linpack
+
+bench_linpack__not_nabla_images:
+- linpack
+
+bench_linpack__runtimes:
+- default     # docker
+#- kata
+#- katafc
+- runsc       # gVisor
+# - runnc       # nabla
+#- runsck     # gVisor KVM Plattform
+
+bench_linpack__resource_limits:
+- default
+- min # 1vCPU and 2g
+- max # max from target system
+
+bench_linpack__repeat: 1
+
+bench_linpack__clean_docker_cache: true
+bench_linpack__skip_deletion_result_folder_promt: false
+
+bench_linpack__result_path: /opt/benchmark_results/bench_linpack
+
+# time:
+# 5 runtimes, 3 limits, 35 wdh, dauer von ca 20 s -> 3 h

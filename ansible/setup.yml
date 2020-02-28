@@ -1,0 +1,16 @@
+---
+- hosts: all
+  become: true
+  roles:
+    - system_update
+    - ntp
+    - system_preparation
+    - golang
+
+- hosts: cruncher
+  become: true
+  roles:
+    - nabla_container
+    - kata_containers
+    - gvisor
+    - docker_patch_deamon

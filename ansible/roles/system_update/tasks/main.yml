@@ -1,0 +1,58 @@
+---
+# tasks file for system_update
+
+# Update CentOS
+- name: .rpm upgrade server
+  yum:  
+    update_cache: yes
+    name: "*"
+    state: latest
+  when: ansible_distribution == 'CentOS'
+
+# Update Debian or Ubuntu
+- name: Update Cache
+  apt: 
+    update_cache: yes
+    cache_valid_time: 3600
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: dist-upgrade
+  apt: 
+    upgrade: dist
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: Remove unnecessary dependencies
+  apt: 
+    autoremove: yes
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: Check if a reboot is required
+  stat: 
+    path: /var/run/reboot-required 
+    get_md5: no
+  register: file
+  
+- name: Print Reboot is necessary
+  debug: 
+    msg: "Ansible reboot the server"
+  when: file.stat.exists == true
+
+- name: Print Reboot is not necessary
+  debug: 
+    msg: "Reboot is not necessary"
+  when: file.stat.exists == false
+
+- name: server reboot
+  shell: sleep 2 && shutdown -r now
+  async: 1
+  poll: 0
+  when: file.stat.exists == true
+
+- name: wait for server
+  wait_for:
+    host: "{{ inventory_hostname }}"
+    port: 22
+    delay: 15
+    timeout: 600
+  delegate_to: localhost
+  when: file.stat.exists == true

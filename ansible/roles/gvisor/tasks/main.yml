@@ -1,0 +1,49 @@
+---
+# tasks file for gvisor
+
+- name: Fail, when not Debian
+  fail: 
+    msg: "The role is designed only for Debian"
+  when: ansible_distribution != 'Debian'
+
+- name: Install dependencies
+  apt:
+    pkg:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg-agent
+      - software-properties-common
+    update_cache: true
+    cache_valid_time: 3600
+    state: present
+
+- name: Install kvm
+  apt:
+    pkg:
+      - qemu-kvm
+    update_cache: true
+    cache_valid_time: 3600
+    state: present
+  when: gvisor__enable_kvm_plattform
+
+- name: Add gVisor apt key
+  apt_key:
+    url: https://gvisor.dev/archive.key
+    state: present
+  register: add_repository_key
+
+- name: Add gVisor apt repo
+  apt_repository:
+    repo: "deb https://storage.googleapis.com/gvisor/releases {{ gvisor__relase_channel }} main"
+    state: present
+
+- name: Install runsc packages
+  apt:
+    pkg:
+      - runsc
+    update_cache: true
+    state: present
+
+
+    

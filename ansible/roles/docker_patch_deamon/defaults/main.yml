@@ -1,0 +1,29 @@
+
+docker_patch_deamon__runtimes:
+  kata:
+    runtime_name: kata
+    runtime_path: /usr/bin/kata-runtime
+    exists: false
+  kata_fc:
+    runtime_name: katafc
+    runtime_path: /opt/kata/bin/kata-fc
+    exists: false
+  gvisor:
+    runtime_name: runsc
+    runtime_path: /usr/bin/runsc
+    exists: false
+  gvisor_kvm:
+    runtime_name: runsck
+    runtime_path: /usr/bin/runsc
+    runtime_args: --platform=kvm
+    exists: false
+  nabla:
+    runtime_name: runnc
+    runtime_path: /usr/local/bin/runnc
+    exists: false
+  default:
+    runtime_name: default
+    runtime_path: /usr/bin/docker-runc
+    exists: true
+
+gvisor__enable_kvm_plattform: false

@@ -1,0 +1,97 @@
+---
+# tasks file for nabla_container
+
+- name: Fail, when not Debian
+  fail: 
+    msg: "The role is designed only for Debian"
+  when: ansible_distribution != 'Debian'
+
+- name: Include Clean UP
+  include_tasks: clean.yml
+  when: nabla__clean
+
+- name: Check that the runnc exists
+  stat:
+    path: /usr/local/bin/runnc
+  register: runnc_stat_result_precheck 
+
+- name: Clone, Build and install nabla containers
+  block:
+    - name: Install dependencies
+      apt:
+        pkg:
+        - build-essential
+        - genisoimage
+        - jq
+        - libseccomp-dev
+        update_cache: true
+        state: latest
+
+    - name: Checkout Git Repo
+      git:
+        repo: 'https://github.com/nabla-containers/runnc.git'
+        dest: "{{ golang__work_dir }}/runnc"
+        update: yes
+
+    - name: Check that the Makefile exists
+      stat:
+        path: "{{ golang__work_dir }}/runnc/Makefile"
+      register: stat_result
+
+    - name: Replace PWD in Makefile, because Ansible always put the wrong folder in  
+      replace:
+        path: "{{ golang__work_dir }}/runnc/Makefile"
+        regexp: '\${PWD}:'
+        replace: "{{ golang__work_dir }}/runnc:"
+
+    - name: Build Nabla runnc
+      shell: make container-build
+      args:
+        chdir: "{{ golang__work_dir }}/runnc/"
+      environment:
+        GOPATH: "{{ golang__work_dir }}" 
+
+    - name: Check that the runnc exists
+      stat:
+        path: "{{ golang__work_dir }}/runnc/build/nabla-run"
+      register: stat_result
+
+    - name: Fail, when build dont run succesfully
+      fail: 
+        msg: "runnc build failed"
+      when: stat_result.stat.exists == False 
+
+    - name: Install Nabla runnc
+      make:
+        chdir: "{{ golang__work_dir }}/runnc/"
+        target: container-install
+      environment:
+        GOPATH: "{{ golang__work_dir }}" 
+
+    - name: Check that the runnc exists
+      stat:
+        path: /usr/local/bin/runnc
+      register: runnc_stat_result
+
+    - name: Check that the nabla-run exists
+      stat:
+        path: /usr/local/bin/nabla-run
+      register: nabla_stat_result
+
+    - name: Fail, when Installation dont run succesfully
+      fail: 
+        msg: "runnc is not present"
+      when: runnc_stat_result.stat.exists == False 
+
+    - name: Fail, when Installation dont run succesfully
+      fail: 
+        msg: "nabla-run is not present"
+      when: nabla_stat_result.stat.exists == False
+
+  when: runnc_stat_result_precheck.stat.exists == False or nabla__rebuild == true
+
+
+
+
+
+

@@ -1,0 +1,20 @@
+---
+# tasks file install_firecracker for kata_containers
+
+- name: Check if folder is empty before proceeding
+  stat:
+    path: "/opt/kata/bin/kata-fc"
+  register: filesFound
+
+- name: get Kata Version
+  shell: kata-runtime -v | grep -i "kata-runtime" | cut -d ':' -f 2 | awk '{$1=$1};1'
+  register: shell_kata__version
+  when: filesFound.stat.exists == False or kata__update_firecracker
+
+
+- name: Download and Extract Kata static binaries
+  unarchive:
+    src: "https://github.com/kata-containers/runtime/releases/download/{{shell_kata__version.stdout}}/kata-static-{{shell_kata__version.stdout}}-x86_64.tar.xz"
+    dest: "/"
+    remote_src: yes  
+  when: filesFound.stat.exists == False or kata__update_firecracker

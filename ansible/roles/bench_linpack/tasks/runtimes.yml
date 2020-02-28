@@ -1,0 +1,19 @@
+---
+# tasks file for bench_linpack.ressource_limit
+
+# The following includes are necessary, because loops don't work with blocks
+# So the tasks are nested in subtasks to create nested loops
+#
+# Nested Loops
+# Ressource Limit - use bench_linpack__resource_limits and set bench_loop_target_reccource_limit
+# Runtime - use bench_linpack__runtimes and set bench_loop_target_runtime  <- this file
+# Container           - use bench_linpack__target_images and set bench_loop_target_image_name
+# Number of instances - no varables set or used   
+# repeat              - repeats the bechmark as long as bench_linpack__repeat and set bench_loop_repeat_number
+# benchmark           - do the real benchmark 
+
+- name: bench_linpack runtime loop
+  include_tasks: containers.yml
+  loop: "{{ bench_linpack__runtimes }}"
+  loop_control:
+    loop_var: bench_loop_target_runtime

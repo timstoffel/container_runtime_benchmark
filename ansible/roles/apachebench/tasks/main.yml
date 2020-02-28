@@ -1,0 +1,50 @@
+---
+# tasks file for apachebench
+
+# The following includes are necessary, because loops don't work with blocks
+# So the tasks are nested in subtasks to create nested loops
+#
+# Nested Loops
+# Ressource Limit     - use apachebench__resource_limits and set bench_loop_target_reccource_limit <- this file
+# Runtime            - use apachebench__runtimes and set bench_loop_target_runtime
+# Container           - use apachebench__target_images and set bench_loop_target_image_name
+# Number of instances - use apachebench__target_count and set bench_loop_target_image_count   
+# repeat              - repeats the bechmark as long as apachebench__repeat and set bench_loop_repeat_number
+# benchmark           - do the real benchmark 
+
+
+- name: Promt delete benchmark results
+  pause: 
+    prompt: "Please confirm you want to remove all possibly existing benchmark results in {{ apachebench__result_path }}! Press return to continue. Press Ctrl+c and then 'a' to abort"
+  when: apachebench__skip_deletion_result_folder_promt == false
+
+- name: Clean benchmark result path
+  file:
+    state: absent
+    path: "{{ apachebench__result_path }}/"
+  delegate_to: ansible
+  delegate_facts: True
+
+- name: Create Image Cache Folder with rhe right permissons
+  file:
+    path: "{{ create_benchmark_images__archive_folder }}"
+    state: directory
+    recurse: yes
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  delegate_to: ansible
+  delegate_facts: True
+
+- name: get images from remote system
+  fetch:
+    src: "{{ create_benchmark_images__archive_folder }}/bench-apache-bench-legacy.tar"
+    dest: "{{ create_benchmark_images__archive_folder }}/bench-apache-bench-legacy.tar"
+    flat: yes
+    fail_on_missing: yes
+  become: false # become false is needed. otherwise the ram consumption doubles and it leads to memory errors
+
+- name: Apache Bench ressorce limit loop
+  include_tasks: runtimes.yml
+  loop: "{{ apachebench__resource_limits }}"
+  loop_control:
+    loop_var: bench_loop_target_reccource_limit

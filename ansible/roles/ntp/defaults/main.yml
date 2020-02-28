@@ -1,0 +1,6 @@
+---
+# defaults file for ntp
+
+# required variables
+
+ntp_server: "192.168.3.30"

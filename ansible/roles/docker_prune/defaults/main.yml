@@ -1,0 +1,6 @@
+---
+# defauts file for docker_prune
+
+docker_prune__remove_docker: true 
+docker_prune__supress_confirmation: false
+docker_prune__clean_cache: true

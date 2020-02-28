@@ -1,0 +1,19 @@
+{  
+{% if docker_patch_deamon__runtimes.kata_fc.exists %}    
+    "storage-driver": "devicemapper",
+{% endif %}
+    "runtimes": {
+    {% for runtime in docker_patch_deamon__runtimes %}
+        {% set _runtime = docker_patch_deamon__runtimes[runtime] %}
+        {% if _runtime['exists'] %}
+        "{{ _runtime['runtime_name'] }}": { 
+            "path": "{{ _runtime['runtime_path'] }}" 
+            {% if 'runtime_args' in _runtime %},
+            "runtimeArgs": ["{{ _runtime['runtime_args'] }}"] 
+            {% endif %}
+        }{% if not loop.last %},{% endif %}
+        {% endif %}
+
+    {% endfor %}
+    }
+}

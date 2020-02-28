@@ -1,0 +1,200 @@
+---
+# tasks file for bench_iperf.benchmark
+
+# Nested Loops
+# Ressource Limit     - use bench_iperf__resource_limits and set bench_loop_target_reccource_limit
+# Runtime             - use bench_iperf__runtimes and set bench_loop_target_runtime
+# Container           - use bench_iperf__target_images and set bench_loop_target_image_name
+# Number of instances - no varables set or used   
+# repeat              - repeats the bechmark as long as bench_iperf__repeat and set bench_loop_repeat_number
+# benchmark           - do the real benchmark <- this file
+
+- name: show loop vars
+  debug: 
+    msg: 
+      - "bench_loop_target_reccource_limit -> {{ bench_loop_target_reccource_limit }} bench_loop_target_runtime -> {{ bench_loop_target_runtime }}"
+      - "bench_loop_target_image_name -> iperf repeat run -> {{ bench_loop_repeat_number }}"
+
+- name: set benchmark output folder var
+  set_fact: bench_loop_result_path="{{ bench_iperf__result_path }}/{{ bench_loop_target_reccource_limit }}/{{bench_loop_target_runtime}}/iperf/{{ bench_loop_bench_duration }}/repeat_{{ bench_loop_repeat_number }}"
+
+- name: show benchmark output folder var
+  debug: 
+    msg: "bench_loop_result_path -> {{ bench_loop_result_path }}"
+    verbosity: 1
+
+- name: Creates benchmark result folder
+  file:
+    path: "{{ bench_loop_result_path }}"
+    owner: "{{ ansible_env.SUDO_USER  }}"
+    group: "{{ ansible_env.SUDO_USER  }}"
+    mode: '0777'
+    state: directory
+  delegate_to: 127.0.0.1 
+
+- name: Creates workdir
+  file:
+    path: "{{ create_benchmark_images__archive_folder }}"
+    state: directory
+  delegate_to: 127.0.0.1
+  delegate_facts: True
+
+- name: Remove Docker Cache target
+  include_role:
+    name: docker_prune
+  vars:
+    docker_prune__remove_docker: false
+    docker_prune__supress_confirmation: true
+    docker_prune__clean_cache: false
+  when: bench_iperf__clean_docker_cache
+
+- name: Remove Docker Cache local
+  include_role:
+    name: docker_prune
+    apply:
+        delegate_to: 127.0.0.1
+        delegate_facts: True
+  vars:
+    docker_prune__remove_docker: false
+    docker_prune__supress_confirmation: true
+    docker_prune__clean_cache: false
+  when: bench_iperf__clean_docker_cache
+
+- name: Create target containers min limits
+  shell:
+    cmd: "docker run -d -p 5201:5201 -p 5201:5201/udp --runtime={{ bench_loop_target_runtime }} --cpus=1 --memory=2G --name=bench-iperf bench-iperf-legacy:1 -s"
+  args:
+    executable: /bin/bash
+  become: true
+  when: bench_loop_target_reccource_limit == 'min'
+
+- name: Create target containers default default
+  shell:
+    cmd: "docker run -d -p 5201:5201 -p 5201:5201/udp --runtime={{ bench_loop_target_runtime }} --name=bench-iperf bench-iperf-legacy:1 -s"
+  args:
+    executable: /bin/bash
+  become: true
+  when: bench_loop_target_reccource_limit == 'default'
+
+- name: Create target containers max limits
+  shell:
+    cmd: "docker run -d -p 5201:5201 -p 5201:5201/udp --runtime={{ bench_loop_target_runtime }} --cpus={{ target_cpu_count }} --memory={{ target_ram_count }} --name=bench-iperf bench-iperf-legacy:1 -s"
+  args:
+    executable: /bin/bash
+  become: true
+  when: bench_loop_target_reccource_limit == 'max' and bench_loop_target_runtime != 'kata'
+
+- name: Create target containers max limits for kata
+  shell:
+    cmd: "docker run -d -p 5201:5201 -p 5201:5201/udp --runtime={{ bench_loop_target_runtime }} --cpus={{ target_cpu_count }} --memory={{ target__kata_ram_count }} --name=bench-iperf bench-iperf-legacy:1 -s"
+  args:
+    executable: /bin/bash
+  become: true
+  when: bench_loop_target_reccource_limit == 'max' and bench_loop_target_runtime == 'kata'
+
+- pause:
+    prompt: "Wait some time to finish the benchmark startup. Please don't stop."
+    seconds: "5"
+
+- name: Create Benchmark Container on Controler for TCP
+  shell:
+    cmd: "docker run -d --name=bench-iperf bench-iperf-legacy:1 -c {{ hostvars.cruncher.ansible_host }} -J -t {{ bench_loop_bench_duration }}"
+  args:
+    executable: /bin/bash
+  become: true
+  delegate_to: 127.0.0.1
+  delegate_facts: True
+
+- pause:
+    prompt: "Wait some time to finish the benchmark run. Please don't stop."
+    seconds:  "{{ bench_loop_bench_duration + 7 }}"
+
+- name: collect tcp logs of the benchmark containers
+  shell:
+    cmd: "docker logs bench-iperf >& iperf_tcp.txt"
+    chdir: "{{ bench_loop_result_path }}"
+  args:
+    executable: /bin/bash
+  delegate_to: 127.0.0.1
+  delegate_facts: True
+  become: true
+
+- name: Remove Docker Cache target
+  include_role:
+    name: docker_prune
+  vars:
+    docker_prune__remove_docker: false
+    docker_prune__supress_confirmation: true
+    docker_prune__clean_cache: false
+  when: bench_iperf__clean_docker_cache
+
+- name: Remove Docker Cache local
+  include_role:
+    name: docker_prune
+    apply:
+        delegate_to: 127.0.0.1
+        delegate_facts: True
+  vars:
+    docker_prune__remove_docker: false
+    docker_prune__supress_confirmation: true
+    docker_prune__clean_cache: false
+  when: bench_iperf__clean_docker_cache
+
+- name: Create target containers min limits
+  shell:
+    cmd: "docker run -d -p 5201:5201 -p 5201:5201/udp --runtime={{ bench_loop_target_runtime }} --cpus=1 --memory=2G --name=bench-iperf bench-iperf-legacy:1 -s"
+  args:
+    executable: /bin/bash
+  become: true
+  when: bench_loop_target_reccource_limit == 'min'
+
+- name: Create target containers default limits
+  shell:
+    cmd: "docker run -d -p 5201:5201 -p 5201:5201/udp --runtime={{ bench_loop_target_runtime }} --name=bench-iperf bench-iperf-legacy:1 -s"
+  args:
+    executable: /bin/bash
+  become: true
+  when: bench_loop_target_reccource_limit == 'default'
+
+- name: Create target containers max limits
+  shell:
+    cmd: "docker run -d -p 5201:5201 -p 5201:5201/udp --runtime={{ bench_loop_target_runtime }} --cpus={{ target_cpu_count }} --memory={{ target_ram_count }} --name=bench-iperf bench-iperf-legacy:1 -s"
+  args:
+    executable: /bin/bash
+  become: true
+  when: bench_loop_target_reccource_limit == 'max' and bench_loop_target_runtime != 'kata'
+
+- name: Create target containers max limits for kata
+  shell:
+    cmd: "docker run -d -p 5201:5201 -p 5201:5201/udp --runtime={{ bench_loop_target_runtime }} --cpus={{ target_cpu_count }} --memory={{ target__kata_ram_count }} --name=bench-iperf bench-iperf-legacy:1 -s"
+  args:
+    executable: /bin/bash
+  become: true
+  when: bench_loop_target_reccource_limit == 'max' and bench_loop_target_runtime == 'kata'
+
+- pause:
+    prompt: "Wait some time to finish the benchmark startup. Please don't stop."
+    seconds: "5"
+
+- name: Create Benchmark Container on Controler for UDP
+  shell:
+    cmd: "docker run -d --name=bench-iperf bench-iperf-legacy:1 -c {{ hostvars.cruncher.ansible_host }} -J -u -t {{ bench_loop_bench_duration }}"
+  args:
+    executable: /bin/bash
+  become: true
+  delegate_to: 127.0.0.1
+  delegate_facts: True
+
+- pause:
+    prompt: "Wait some time to finish the benchmark run. Please don't stop."
+    seconds: "{{ bench_loop_bench_duration + 7 }}"
+
+- name: collect udp logs of the benchmark containers
+  shell:
+    cmd: "docker logs bench-iperf >& iperf_udp.txt"
+    chdir: "{{ bench_loop_result_path }}"
+  args:
+    executable: /bin/bash
+  delegate_to: 127.0.0.1
+  delegate_facts: True
+  become: true

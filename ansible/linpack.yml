@@ -1,0 +1,19 @@
+---
+- hosts: cruncher
+  become: true
+  roles:
+    - bench_linpack
+  vars:
+    bench_linpack__runtimes:
+    - default     # docker
+    - kata
+    - katafc
+    - runsc       # gVisor
+    - runsck     # gVisor KVM Plattform
+
+    bench_linpack__resource_limits:
+    - default
+    - min # 1vCPU and 2g
+    - max # max from target system
+
+    bench_linpack__repeat: 35

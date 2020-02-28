@@ -1,0 +1,291 @@
+---
+#tasks file for create_benchmark_images
+- name: Fail, when not Debian 
+  fail: 
+    msg: "The role is designed only for Debian"
+  when: ansible_distribution != 'Debian'
+
+- name: Remove Docker Cache
+  include_role:
+    name: docker_prune
+  vars:
+    docker_prune__remove_docker: false
+    docker_prune__supress_confirmation: true
+  when: create_benchmark_images__clean_docker_cache
+
+- name: Creates workdir
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+  - "{{ create_benchmark_images__archive_folder }}"
+  - "{{ create_benchmark_images__build_path }}"
+
+- name: Build and archive nabla demo image
+  include_tasks: nabla-demo-images.yml
+  when: create_benchmark_images__include_nabla_demo
+
+- name: Build and archive benchmark images
+  block:
+    - name: checkout alpine apache bench git repo
+      git:
+        repo: 'https://github.com/devth/alpine-bench.git'
+        dest: "{{ create_benchmark_images__build_path }}/alpine-bench"
+        update: no
+
+    - name: build apache-bench
+      block:
+        - name: Build an apache-bench image 
+          docker_image:
+            build:
+              path: "{{ create_benchmark_images__build_path }}/alpine-bench/"
+              dockerfile: Dockerfile
+            name: "bench-{{ create_benchmark_images__benchmark_images.apache_bench.name }}"
+            tag: "{{ create_benchmark_images__tag }}"
+            source: build
+
+        - name: Archive apache-bench image 
+          docker_image:
+            name: "bench-{{ create_benchmark_images__benchmark_images.apache_bench.name }}"
+            tag: "{{ create_benchmark_images__tag }}"
+            archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__benchmark_images.apache_bench.name }}-legacy.tar"
+            source: local
+
+      when: create_benchmark_images__benchmark_images.apache_bench.enabled
+
+  when: create_benchmark_images__include_bechmark
+
+- name: Pull and archive benchmark non nabla target images
+  block:
+    - name: nginx
+      block:
+        - name: pull nginx
+          docker_image:
+            name: "{{ create_benchmark_images__pullable_images.nginx.pullname }}"
+            pull: true
+            state: present
+          register: nginx_pull
+
+        - name: tag image
+          shell:
+            cmd: "docker tag {{ create_benchmark_images__pullable_images.nginx.pullname }} bench-{{ create_benchmark_images__pullable_images.nginx.name }}-legacy:{{ create_benchmark_images__tag }}"
+          when: nginx_pull.changed
+
+        - name: Archive nginx image 
+          docker_image:
+            name: "bench-{{ create_benchmark_images__pullable_images.nginx.name }}-legacy"
+            tag: "{{ create_benchmark_images__tag }}"
+            archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__pullable_images.nginx.name }}-legacy.tar"
+            source: local
+      when: create_benchmark_images__pullable_images.nginx.enabled
+
+    - name: tomcat
+      block:
+        - name: pull tomcat
+          docker_image:
+            name: "{{ create_benchmark_images__pullable_images.tomcat.pullname }}"
+            pull: true
+            state: present
+          register: tomcat_pull
+
+        - name: tag image
+          shell:
+            cmd: "docker tag {{ create_benchmark_images__pullable_images.tomcat.pullname }} bench-{{ create_benchmark_images__pullable_images.tomcat.name }}-legacy:{{ create_benchmark_images__tag }}"
+          when: tomcat_pull.changed
+
+        - name: Archive tomcat image 
+          docker_image:
+            name: "bench-{{ create_benchmark_images__pullable_images.tomcat.name }}-legacy"
+            tag: "{{ create_benchmark_images__tag }}"
+            archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__pullable_images.tomcat.name }}-legacy.tar"
+            source: local
+      when: create_benchmark_images__pullable_images.tomcat.enabled
+
+    - name: iperf
+      block:
+        - name: pull iperf
+          docker_image:
+            name: "{{ create_benchmark_images__pullable_images.iperf.pullname }}"
+            pull: true
+            state: present
+
+        - name: tag image
+          shell:
+            cmd: "docker tag {{ create_benchmark_images__pullable_images.iperf.pullname }} bench-{{ create_benchmark_images__pullable_images.iperf.name }}-legacy:{{ create_benchmark_images__tag }}"
+
+        - name: Archive iperf image 
+          docker_image:
+            name: "bench-{{ create_benchmark_images__pullable_images.iperf.name }}-legacy"
+            tag: "{{ create_benchmark_images__tag }}"
+            archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__pullable_images.iperf.name }}-legacy.tar"
+            source: local
+      when: create_benchmark_images__pullable_images.iperf.enabled
+
+    - name: alpine
+      block:
+        - name: pull alpine
+          docker_image:
+            name: "{{ create_benchmark_images__pullable_images.alpine.pullname }}"
+            pull: true
+            state: present
+
+        - name: tag image
+          shell:
+            cmd: "docker tag {{ create_benchmark_images__pullable_images.alpine.pullname }} bench-{{ create_benchmark_images__pullable_images.alpine.name }}-legacy:{{ create_benchmark_images__tag }}"
+
+        - name: Archive alpine image 
+          docker_image:
+            name: "bench-{{ create_benchmark_images__pullable_images.alpine.name }}-legacy"
+            tag: "{{ create_benchmark_images__tag }}"
+            archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__pullable_images.alpine.name }}-legacy.tar"
+            source: local
+      when: create_benchmark_images__pullable_images.alpine.enabled
+
+    - name: postgres
+      block:
+        - name: pull postgres
+          docker_image:
+            name: "{{ create_benchmark_images__pullable_images.postgres.pullname }}"
+            pull: true
+            state: present
+
+        - name: tag image
+          shell:
+            cmd: "docker tag {{ create_benchmark_images__pullable_images.postgres.pullname }} bench-{{ create_benchmark_images__pullable_images.postgres.name }}-legacy:{{ create_benchmark_images__tag }}"
+
+        - name: Archive postgres image 
+          docker_image:
+            name: "bench-{{ create_benchmark_images__pullable_images.postgres.name }}-legacy"
+            tag: "{{ create_benchmark_images__tag }}"
+            archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__pullable_images.postgres.name }}-legacy.tar"
+            source: local
+      when: create_benchmark_images__pullable_images.postgres.enabled
+
+    - name: ubuntu
+      block:
+        - name: pull ubuntu
+          docker_image:
+            name: "{{ create_benchmark_images__pullable_images.ubuntu.pullname }}"
+            pull: true
+            state: present
+
+        - name: tag image
+          shell:
+            cmd: "docker tag {{ create_benchmark_images__pullable_images.ubuntu.pullname }} bench-{{ create_benchmark_images__pullable_images.ubuntu.name }}-legacy:{{ create_benchmark_images__tag }}"
+
+        - name: Archive ubuntu image 
+          docker_image:
+            name: "bench-{{ create_benchmark_images__pullable_images.ubuntu.name }}-legacy"
+            tag: "{{ create_benchmark_images__tag }}"
+            archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__pullable_images.ubuntu.name }}-legacy.tar"
+            source: local
+      when: create_benchmark_images__pullable_images.ubuntu.enabled
+
+    - name: mongo
+      block:
+        - name: pull mongo
+          docker_image:
+            name: "{{ create_benchmark_images__pullable_images.mongo.pullname }}"
+            pull: true
+            state: present
+
+        - name: tag image
+          shell:
+            cmd: "docker tag {{ create_benchmark_images__pullable_images.mongo.pullname }} bench-{{ create_benchmark_images__pullable_images.mongo.name }}-legacy:{{ create_benchmark_images__tag }}"
+
+        - name: Archive mongo image 
+          docker_image:
+            name: "bench-{{ create_benchmark_images__pullable_images.mongo.name }}-legacy"
+            tag: "{{ create_benchmark_images__tag }}"
+            archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__pullable_images.mongo.name }}-legacy.tar"
+            source: local
+      when: create_benchmark_images__pullable_images.mongo.enabled
+
+    - name: traefik
+      block:
+        - name: pull traefik
+          docker_image:
+            name: "{{ create_benchmark_images__pullable_images.traefik.pullname }}"
+            pull: true
+            state: present
+
+        - name: tag image
+          shell:
+            cmd: "docker tag {{ create_benchmark_images__pullable_images.traefik.pullname }} bench-{{ create_benchmark_images__pullable_images.traefik.name }}-legacy:{{ create_benchmark_images__tag }}"
+
+        - name: Archive traefik image 
+          docker_image:
+            name: "bench-{{ create_benchmark_images__pullable_images.traefik.name }}-legacy"
+            tag: "{{ create_benchmark_images__tag }}"
+            archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__pullable_images.traefik.name }}-legacy.tar"
+            source: local
+      when: create_benchmark_images__pullable_images.traefik.enabled
+
+    - name: httpd
+      block:
+        - name: pull httpd
+          docker_image:
+            name: "{{ create_benchmark_images__pullable_images.httpd.pullname }}"
+            pull: true
+            state: present
+
+        - name: tag image
+          shell:
+            cmd: "docker tag {{ create_benchmark_images__pullable_images.httpd.pullname }} bench-{{ create_benchmark_images__pullable_images.httpd.name }}-legacy:{{ create_benchmark_images__tag }}"
+
+        - name: Archive httpd image 
+          docker_image:
+            name: "bench-{{ create_benchmark_images__pullable_images.httpd.name }}-legacy"
+            tag: "{{ create_benchmark_images__tag }}"
+            archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__pullable_images.httpd.name }}-legacy.tar"
+            source: local
+      when: create_benchmark_images__pullable_images.httpd.enabled
+
+    - name: busybox
+      block:
+        - name: pull busybox
+          docker_image:
+            name: "{{ create_benchmark_images__pullable_images.busybox.pullname }}"
+            pull: true
+            state: present
+
+        - name: tag image
+          shell:
+            cmd: "docker tag {{ create_benchmark_images__pullable_images.busybox.pullname }} bench-{{ create_benchmark_images__pullable_images.busybox.name }}-legacy:{{ create_benchmark_images__tag }}"
+
+        - name: Archive apache-bench image 
+          docker_image:
+            name: "bench-{{ create_benchmark_images__pullable_images.busybox.name }}-legacy"
+            tag: "{{ create_benchmark_images__tag }}"
+            archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__pullable_images.busybox.name }}-legacy.tar"
+            source: local
+      when: create_benchmark_images__pullable_images.busybox.enabled
+      
+    - name: linpack
+      block:
+        - name: pull linpack
+          docker_image:
+            name: "{{ create_benchmark_images__pullable_images.linpack.pullname }}"
+            pull: true
+            state: present
+
+        - name: tag image
+          shell:
+            cmd: "docker tag {{ create_benchmark_images__pullable_images.linpack.pullname }} bench-{{ create_benchmark_images__pullable_images.linpack.name }}-legacy:{{ create_benchmark_images__tag }}"
+
+        - name: Archive apache-bench image 
+          docker_image:
+            name: "bench-{{ create_benchmark_images__pullable_images.linpack.name }}-legacy"
+            tag: "{{ create_benchmark_images__tag }}"
+            archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__pullable_images.linpack.name }}-legacy.tar"
+            source: local
+      when: create_benchmark_images__pullable_images.linpack.enabled
+  when: create_benchmark_images__include_pullable
+
+- name: Recursively change ownership of archive directory
+  file:
+    path: "{{ create_benchmark_images__archive_folder }}"
+    state: directory
+    recurse: yes
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"

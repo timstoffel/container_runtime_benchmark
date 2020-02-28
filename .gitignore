@@ -1,0 +1,34 @@
+# ansible
+*.retry
+
+# vagrant
+.vagrant/
+
+# vscode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# project specific
+/private/*
+ansible.cfg
+.virtualenv
+
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# intellij idea
+.idea/**/workspace.xml
+.idea/**/tasks.xml
+.idea/dictionaries
+
+# logs
+logs/
+
+# distributions of the code
+dist/
+

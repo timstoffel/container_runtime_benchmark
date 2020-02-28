@@ -1,0 +1,79 @@
+---
+# defauts file for create_benchmark_images
+
+create_benchmark_images__build_path: /opt/work/benchmark_image_build
+create_benchmark_images__archive_folder: /opt/work/image_cache
+create_benchmark_images__clean_docker_cache: true
+create_benchmark_images__tag: 1
+
+create_benchmark_images__include_nabla_demo: true
+create_benchmark_images__include_pullable: true
+create_benchmark_images__include_bechmark: true
+
+create_benchmark_images__nabla_demo_apps:
+  go_httpd:
+    name: go-httpd
+    enabled: true
+  node_express:
+    name: node-express
+    enabled: false
+  node_webrepl:
+    name: node-webrepl
+    enabled: false
+  python_tornado:
+    name: python-tornado
+    enabled: true
+  redis_test:
+    name: redis-test
+    enabled: true
+
+create_benchmark_images__benchmark_images:
+  apache_bench:
+    name: apache-bench
+    enabled: true
+    
+create_benchmark_images__pullable_images:
+  nginx:
+    name: nginx
+    enabled: true
+    pullname: nginx:1.17.7
+  tomcat:
+    name: tomcat
+    enabled: true
+    pullname: tomcat:jdk13-openjdk-oracle
+  iperf:
+    name: iperf
+    enabled: true
+    pullname: networkstatic/iperf3:latest
+  alpine:
+    name: alpine
+    enabled: true
+    pullname: alpine:3.11.2
+  postgres:
+    name: postgres
+    enabled: true
+    pullname: postgres:12.1
+  ubuntu:
+    name: ubuntu
+    enabled: true
+    pullname: ubuntu:bionic-20191202
+  mongo:
+    name: mongo
+    enabled: true
+    pullname: mongo:4.0.14-xenial
+  traefik:
+    name: traefik
+    enabled: true
+    pullname: traefik:v2.1.2
+  httpd:
+    name: httpd
+    enabled: true
+    pullname: httpd:2.4.41 
+  busybox:
+    name: busybox
+    enabled: true
+    pullname: busybox:1.31.1
+  linpack:
+    name: linpack
+    enabled: true
+    pullname: edwardchalstrey/hpl_benchmark

@@ -1,0 +1,4 @@
+---
+
+gvisor__relase_channel: "release"
+gvisor__enable_kvm_plattform: true

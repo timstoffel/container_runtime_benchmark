@@ -1,0 +1,56 @@
+---
+# tasks file for golang
+
+- name: Fail, when not Debian
+  fail: 
+    msg: "The role is designed only for Debian"
+  when: ansible_distribution != 'Debian'
+
+- name: Install dependencies
+  apt:
+    pkg:
+      - curl
+      - gcc
+      - git
+      - findutils
+      - make
+      - rsync
+      - tar
+    update_cache: true
+    state: present
+    cache_valid_time: 3600
+
+- name: Check if d folder is empty before proceeding
+  find:
+    paths: '{{golang__path}}/go'
+  register: filesFound
+
+- name: Download and Extract golang
+  unarchive:
+    src: "{{golang__dl_server}}/{{golang__package}}"
+    dest: "{{golang__path}}/"
+    remote_src: yes
+  when: filesFound.matched == 0
+
+- name: Creates workdir
+  file:
+    path: "{{ golang__work_dir }}"
+    state: directory
+    owner: "{{ golang__dir_owner }}"
+    group: "{{ golang__dir_owner }}"
+    mode: 0775
+    recurse: yes
+  when: filesFound.matched == 0
+
+- name: Create 
+  copy:
+    dest: /etc/profile.d/gopaths.sh
+    content: |
+      export GOPATH={{ golang__work_dir }}
+      export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+  when: filesFound.matched == 0
+
+- name: show debug message
+  debug:
+    msg: "The GO Path is not active till a reboot"
+  when: filesFound.matched == 0

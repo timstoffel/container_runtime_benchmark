@@ -1,0 +1,29 @@
+# inventory name to run environment specific code
+inventory: vagrant_dev
+env_tag: dev
+
+ansible_user: vagrant
+ansible_ssh_pass: vagrant
+target_cpu_count: 4
+target_ram_count: 8G
+target__kata_ram_count: 5.5G 
+
+golang__work_dir: /opt/work/go
+
+docker__version: "18.06"
+docker__state: "latest"
+
+nabla__clean: false
+
+gvisor__enable_kvm_plattform: false
+kata__install_firecracker: true
+
+ntp_server: "de.pool.ntp.org"
+
+docker__daemon_json: |
+  "storage-driver": "devicemapper"
+
+bechmark_results_base_folder: /opt/benchmark_results 
+
+create_benchmark_images__archive_folder: /opt/work/image_cache
+apachebench__result_path: /opt/benchmark_results/apache_benchmark

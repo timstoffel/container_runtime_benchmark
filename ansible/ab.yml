@@ -1,0 +1,44 @@
+---
+- hosts: cruncher
+  become: true
+  roles:
+    - apachebench
+  vars:
+    apachebench__clean_docker_cache: true
+    apachebench__target_images:
+    # - go-httpd
+    # - node-express
+    # - python-tornado
+
+    apachebench__not_nabla_images:
+    - httpd
+    # - nginx
+    # - tomcat
+
+    apachebench__target_count:
+    - 1
+    - 2
+    - 3
+    - 5
+    - 8
+    - 13
+    - 21
+    
+    apachebench__skip_nabla_images: true
+
+    apachebench__runtimes:
+    - default     # docker
+    - runsc       # gVisor
+    - kata
+    - katafc      # Kata Firecracker
+    - runnc       # nabla
+    - runsck     # gVisor KVM Plattform
+
+    apachebench__error_check: true
+
+    apachebench__resource_limits:
+    - default
+    - min 
+    - max 
+
+    apachebench__benchmark_time_limit: 50

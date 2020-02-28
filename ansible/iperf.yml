@@ -1,0 +1,26 @@
+---
+- hosts: cruncher
+  become: true
+  roles:
+    - bench_iperf
+  vars:
+    bench_iperf__runtimes:
+    - default     # docker
+    - kata
+    - katafc
+    - runsc       # gVisor
+    - runsck     # gVisor KVM Plattform
+
+    bench_iperf__resource_limits:
+    - default
+    - min # 1vCPU and 2g
+    - max # max from target system
+
+    bench_iperf__repeat: 35
+
+    bench_iperf__duration:
+    - 10
+    # - 30
+    # - 60
+    # - 120
+    # - 240

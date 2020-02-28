@@ -1,0 +1,25 @@
+---
+# tasks file for bench_linpack.load_target_images
+
+- name: show vars
+  debug: 
+    msg: "nabla_runtime_flag {{ nabla_runtime_flag }} archive_image_key {{ archive_image_key }}"
+    verbosity: 1
+
+- name: Load docker images from archive
+  docker_image:
+    name: "bench-{{ archive_image_key }}-{{ container_flag }}"
+    tag: 1
+    push: no
+    load_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ archive_image_key }}-legacy.tar"
+    source: load
+  when: nabla_runtime_flag == false
+
+- name: Load nabla images from archive
+  docker_image:
+    name: "bench-{{ archive_image_key }}-{{ container_flag }}"
+    tag: 1
+    push: no
+    load_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ archive_image_key }}-nabla.tar"
+    source: load
+  when: nabla_runtime_flag == true

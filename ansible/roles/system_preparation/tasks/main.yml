@@ -1,0 +1,99 @@
+---
+# tasks file for em.needed_packages
+
+- name: Fail, when not Debian 
+  fail: 
+    msg: "The role is designed only for Debian"
+  when: ansible_distribution != 'Debian'
+
+#  For Python 3
+# - name: Install dependencies
+#   apt:
+#     pkg:
+#       - python-setuptools
+#       - build-essential
+#       - apt-transport-https
+#       - ca-certificates
+#       - curl
+#       - sshpass
+#       - python3-apt
+#       - python3-pip
+#       - python3-setuptools
+#     update_cache: true
+#     state: present
+#     cache_valid_time: 3600
+
+#  Install Dockerpy for Docker Ansile Module and Docker Dependencies
+- name: Install dependencies
+  apt:
+    pkg:
+      - python-all-dev
+      - python-setuptools
+      - python-wheel
+      - build-essential
+      - python-pip-whl
+      - python
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - sshpass
+      - python-apt
+      - python-pip
+      - zip
+      - screen
+    update_cache: true
+    state: present
+    cache_valid_time: 3600
+
+- name: install docker dependecies
+  pip:
+    name: docker
+    state: present
+
+# Fix to resolve the following Error: "The error was: No module named ssl_match_hostname"
+# Surprisingly it fixes "Failed to import the required Python library 'Docker SDK for Python'" too
+- name: remove backports.ssl-match-hostname 
+  pip:
+    name: backports.ssl-match-hostname
+    state: absent
+
+- name: Install dependencies
+  apt:
+    pkg:
+      - python-backports.ssl-match-hostname
+    update_cache: true
+    state: present
+    cache_valid_time: 3600
+# End of Fix
+# ToDo Check if the cause of the Error is the used docker role
+
+- name: Check if a reboot is required
+  stat: 
+    path: /var/run/reboot-required 
+    get_md5: no
+  register: file
+  
+- name: Print Reboot is necessary
+  debug: 
+    msg: "Ansible reboot the server"
+  when: file.stat.exists == true
+
+- name: Print Reboot is not necessary
+  debug: 
+    msg: "Reboot is not necessary"
+  when: file.stat.exists == false
+
+- name: server reboot
+  shell: sleep 2 && shutdown -r now
+  async: 1
+  poll: 0
+  when: file.stat.exists == true
+
+- name: wait for server
+  wait_for:
+    host: "{{ inventory_hostname }}"
+    port: 22
+    delay: 15
+    timeout: 600
+  delegate_to: localhost
+  when: file.stat.exists == true

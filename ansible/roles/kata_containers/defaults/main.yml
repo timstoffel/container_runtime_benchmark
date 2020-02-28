@@ -1,0 +1,6 @@
+
+# defaults file for em.kata_containers
+kata__release_branch: master
+kata__release_arch: x86_64
+kata__install_firecracker: false
+kata__update_firecracker: false

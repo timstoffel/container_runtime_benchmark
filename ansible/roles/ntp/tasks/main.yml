@@ -1,0 +1,57 @@
+---
+# tasks file for ntp
+
+- name: Fail, when not Debian
+  fail: 
+    msg: "The role is designed only for Debian"
+  when: ansible_distribution != 'Debian'
+
+- name: Check if ntp is installed
+  shell: dpkg --status ntp | grep 'install ok installed'
+  register: package_ntp_check
+  failed_when: no
+  changed_when: no
+
+- name: Check if ntpdate is installed
+  command: dpkg --status ntpdate | grep 'install ok installed'
+  register: package_ntpdate_check
+  failed_when: no
+  changed_when: no
+
+- name: remove ntp package
+  apt:
+    name: ntp
+    state: absent
+    purge: yes
+  when: package_ntp_check.rc == 0
+
+- name: remove ntpdate package
+  apt:
+    name: ntpdate
+    state: absent
+    purge: yes
+  when: package_ntp_check.rc == 0
+
+- name: enable timedatectlntp sync
+  shell: timedatectl set-ntp true
+
+- name: change timesyncd.conf
+  lineinfile:
+    dest: /etc/systemd/timesyncd.conf
+    owner: root
+    group: root
+    mode: 0644
+    line: "{{ item.line }}"
+  with_items:
+    - { line: 'NTP={{ ntp_server }}' }
+    - { line: 'FallbackNTP=0.debian.pool.ntp.org 1.debian.pool.ntp.org 2.debian.pool.ntp.org 3.debian.pool.ntp.org' }
+  notify:
+    - restart timedatectl service
+
+- name: get time
+  shell: date -R
+  register: time
+
+- name: show time
+  debug: 
+    msg: "Time on host {{ ansible_hostname }} is {{ time.stdout_lines }}"

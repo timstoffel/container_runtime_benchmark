@@ -1,0 +1,19 @@
+---
+# tasks file for bench_iperf.container
+
+# The following includes are necessary, because loops don't work with blocks
+# So the tasks are nested in subtasks to create nested loops
+#
+# Nested Loops
+# Ressource Limit     - use bench_iperf__resource_limits and set bench_loop_target_reccource_limit
+# Runtime            - use bench_iperf__runtimes and set bench_loop_target_runtime
+# Container           - use bench_iperf__target_images and set bench_loop_target_image_name
+# Number of instances - no varables set or used   <- this file  
+# repeat              - repeats the bechmark as long as bench_iperf__repeat and set bench_loop_repeat_number
+# benchmark           - do the real benchmark
+
+- name: Loop - different instance counts
+  include_tasks: repeat.yml
+  loop: "{{ bench_iperf__duration}}"
+  loop_control:
+    loop_var: bench_loop_bench_duration

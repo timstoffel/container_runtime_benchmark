@@ -1,0 +1,201 @@
+---
+# tasks file for nabla-demo-images
+
+
+- name: checkout nabla demo apps git repo
+  git:
+    repo: 'https://github.com/nabla-containers/nabla-demo-apps.git'
+    dest: "{{ create_benchmark_images__build_path }}/nabla-demo-apps"
+    update: no
+
+- name: build go-httpd
+  block:
+    - name: Build an go-httpd legacy image 
+      docker_image:
+        build:
+          path: "{{ create_benchmark_images__build_path }}/nabla-demo-apps/{{ create_benchmark_images__nabla_demo_apps.go_httpd.name }}/"
+          dockerfile: Dockerfile.legacy
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.go_httpd.name }}-legacy"
+        tag: "{{ create_benchmark_images__tag }}"
+        source: build
+
+    - name: Archive go-httpd legacy image 
+      docker_image:
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.go_httpd.name }}-legacy"
+        tag: "{{ create_benchmark_images__tag }}"
+        archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__nabla_demo_apps.go_httpd.name }}-legacy.tar"
+        source: local
+    
+    - name: Build an go-httpd nabla image 
+      docker_image:
+        build:
+          path: "{{ create_benchmark_images__build_path }}/nabla-demo-apps/{{ create_benchmark_images__nabla_demo_apps.go_httpd.name }}/"
+          dockerfile: Dockerfile.nabla
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.go_httpd.name }}-nabla"
+        tag: "{{ create_benchmark_images__tag }}"
+        source: build
+
+    - name: Archive go-httpd nabla image 
+      docker_image:
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.go_httpd.name }}-nabla"
+        tag: "{{ create_benchmark_images__tag }}"
+        archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__nabla_demo_apps.go_httpd.name }}-nabla.tar"
+        source: local
+
+  when: create_benchmark_images__nabla_demo_apps.go_httpd.enabled
+
+- name: build node-express
+  block:
+    - name: Build an node-express legacy image 
+      docker_image:
+        build:
+          path: "{{ create_benchmark_images__build_path }}/nabla-demo-apps/{{ create_benchmark_images__nabla_demo_apps.node_express.name }}/"
+          dockerfile: Dockerfile.legacy
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.node_express.name }}-legacy"
+        tag: "{{ create_benchmark_images__tag }}"
+        source: build
+
+    - name: Archive node-express legacy image 
+      docker_image:
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.node_express.name }}-legacy"
+        tag: "{{ create_benchmark_images__tag }}"
+        archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__nabla_demo_apps.node_express.name }}-legacy.tar"
+        source: local
+    
+    - name: Build an node-express nabla image 
+      docker_image:
+        build:
+          path: "{{ create_benchmark_images__build_path }}/nabla-demo-apps/{{ create_benchmark_images__nabla_demo_apps.node_express.name }}/"
+          dockerfile: Dockerfile.nabla
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.node_express.name }}-nabla"
+        tag: "{{ create_benchmark_images__tag }}"
+        source: build
+
+    - name: Archive node-express nabla image 
+      docker_image:
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.node_express.name }}-nabla"
+        tag: "{{ create_benchmark_images__tag }}"
+        archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__nabla_demo_apps.node_express.name }}-nabla.tar"
+        source: local
+
+  when: create_benchmark_images__nabla_demo_apps.node_express.enabled
+
+- name: build node_webrepl
+  block:
+    - name: Build an node_webrepl legacy image 
+      docker_image:
+        build:
+          path: "{{ create_benchmark_images__build_path }}/nabla-demo-apps/{{ create_benchmark_images__nabla_demo_apps.node_webrepl.name }}/"
+          dockerfile: Dockerfile.legacy
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.node_webrepl.name }}-legacy"
+        tag: "{{ create_benchmark_images__tag }}"
+        source: build
+
+    - name: Archive node_webrepl legacy image 
+      docker_image:
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.node_webrepl.name }}-legacy"
+        tag: "{{ create_benchmark_images__tag }}"
+        archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__nabla_demo_apps.node_webrepl.name }}-legacy.tar"
+        source: local
+    
+    - name: Build an node_webrepl nabla image 
+      docker_image:
+        build:
+          path: "{{ create_benchmark_images__build_path }}/nabla-demo-apps/{{ create_benchmark_images__nabla_demo_apps.node_webrepl.name }}/"
+          dockerfile: Dockerfile.nabla
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.node_webrepl.name }}-nabla"
+        tag: "{{ create_benchmark_images__tag }}"
+        source: build
+
+    - name: Archive node_webrepl nabla image 
+      docker_image:
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.node_webrepl.name }}-nabla"
+        tag: "{{ create_benchmark_images__tag }}"
+        archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__nabla_demo_apps.node_webrepl.name }}-nabla.tar"
+        source: local
+
+  when: create_benchmark_images__nabla_demo_apps.node_webrepl.enabled
+
+- name: build python_tornado
+  block:
+
+    # Fix for the follwing Error: Could not find a version that satisfies the requirement perf 
+    # perf package is not present
+    - name: remove perf form pip install
+      replace:
+        path: "{{ item }}"
+        regexp: 'RUN pip install tornado==4.5.3 six perf'
+        replace: 'RUN pip install tornado==4.5.3 six'
+      with_items:
+      - "{{ create_benchmark_images__build_path }}/nabla-demo-apps/{{ create_benchmark_images__nabla_demo_apps.python_tornado.name }}/Dockerfile.legacy"
+      - "{{ create_benchmark_images__build_path }}/nabla-demo-apps/{{ create_benchmark_images__nabla_demo_apps.python_tornado.name }}/Dockerfile.nabla"
+
+    - name: Build an python_tornado legacy image 
+      docker_image:
+        build:
+          path: "{{ create_benchmark_images__build_path }}/nabla-demo-apps/{{ create_benchmark_images__nabla_demo_apps.python_tornado.name }}/"
+          dockerfile: Dockerfile.legacy
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.python_tornado.name }}-legacy"
+        tag: "{{ create_benchmark_images__tag }}"
+        source: build
+
+    - name: Archive python_tornado legacy image 
+      docker_image:
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.python_tornado.name }}-legacy"
+        tag: "{{ create_benchmark_images__tag }}"
+        archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__nabla_demo_apps.python_tornado.name }}-legacy.tar"
+        source: local
+    
+    - name: Build an python_tornado nabla image 
+      docker_image:
+        build:
+          path: "{{ create_benchmark_images__build_path }}/nabla-demo-apps/{{ create_benchmark_images__nabla_demo_apps.python_tornado.name }}/"
+          dockerfile: Dockerfile.nabla
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.python_tornado.name }}-nabla"
+        tag: "{{ create_benchmark_images__tag }}"
+        source: build
+
+    - name: Archive python_tornado nabla image 
+      docker_image:
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.python_tornado.name }}-nabla"
+        tag: "{{ create_benchmark_images__tag }}"
+        archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__nabla_demo_apps.python_tornado.name }}-nabla.tar"
+        source: local
+
+  when: create_benchmark_images__nabla_demo_apps.python_tornado.enabled
+
+- name: build redis_test
+  block:
+    - name: Build an redis_test legacy image 
+      docker_image:
+        build:
+          path: "{{ create_benchmark_images__build_path }}/nabla-demo-apps/{{ create_benchmark_images__nabla_demo_apps.redis_test.name }}/"
+          dockerfile: Dockerfile.legacy
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.redis_test.name }}-legacy"
+        tag: "{{ create_benchmark_images__tag }}"
+        source: build
+
+    - name: Archive redis_test legacy image 
+      docker_image:
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.redis_test.name }}-legacy"
+        tag: "{{ create_benchmark_images__tag }}"
+        archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__nabla_demo_apps.redis_test.name }}-legacy.tar"
+        source: local
+    
+    - name: Build an redis_test nabla image 
+      docker_image:
+        build:
+          path: "{{ create_benchmark_images__build_path }}/nabla-demo-apps/{{ create_benchmark_images__nabla_demo_apps.redis_test.name }}/"
+          dockerfile: Dockerfile.nabla
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.redis_test.name }}-nabla"
+        tag: "{{ create_benchmark_images__tag }}"
+        source: build
+
+    - name: Archive redis_test nabla image 
+      docker_image:
+        name: "bench-{{ create_benchmark_images__nabla_demo_apps.redis_test.name }}-nabla"
+        tag: "{{ create_benchmark_images__tag }}"
+        archive_path: "{{ create_benchmark_images__archive_folder }}/bench-{{ create_benchmark_images__nabla_demo_apps.redis_test.name }}-nabla.tar"
+        source: local
+
+  when: create_benchmark_images__nabla_demo_apps.redis_test.enabled

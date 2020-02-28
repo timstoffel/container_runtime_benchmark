@@ -1,0 +1,4 @@
+# defaults file for nabla_container
+
+nabla__clean: false
+nabla__rebuild: false

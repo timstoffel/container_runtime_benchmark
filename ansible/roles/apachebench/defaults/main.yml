@@ -1,0 +1,51 @@
+---
+# defauts file for apachebench
+
+apachebench__target_images:
+- go-httpd
+- node-express
+- python-tornado
+
+apachebench__not_nabla_images:
+- httpd
+- nginx
+- tomcat
+
+apachebench__target_count:
+- 1
+- 2
+- 3
+- 5
+- 8
+- 13
+- 21
+#- 34
+
+apachebench__runtimes:
+- default     # docker
+- runsc       # gVisor
+- kata
+- katafc      # Kata Firecracker
+- runnc       # nabla
+#- runsck     # gVisor KVM Plattform
+
+apachebench__resource_limits:
+- default
+- min # 1vCPU and 2GB
+- max # max from target system
+
+apachebench__repeat: 35
+apachebench__request_number: 1000000
+apachebench__request_concurrency: 100
+apachebench__request_time_limit: 30
+apachebench__benchmark_time_limit: 40
+
+apachebench__clean_docker_cache: true
+apachebench__skip_deletion_result_folder_promt: false
+
+apachebench__result_path: /opt/benchmark_results/apache_benchmark
+
+apachebench__error_check: false
+
+# time:
+# 5 images, 5 runtimes, 7 target count stufen, 3 limits, 35 wdh, dauer von ca 40 s -> 204 h -> 8,5 d

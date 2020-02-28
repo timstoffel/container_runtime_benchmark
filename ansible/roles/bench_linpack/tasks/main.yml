@@ -1,0 +1,35 @@
+---
+# tasks file for bench_linpack
+
+# The following includes are necessary, because loops don't work with blocks
+# So the tasks are nested in subtasks to create nested loops
+#
+# Nested Loops
+# Ressource Limit     - use bench_linpack__resource_limits and set bench_loop_target_reccource_limit <- this file
+# Runtime            - use bench_linpack__runtimes and set bench_loop_target_runtime
+# Container           - use bench_linpack__target_images and set bench_loop_target_image_name
+# Number of instances - no varables set or used   
+# repeat              - repeats the bechmark as long as bench_linpack__repeat and set bench_loop_repeat_number
+# benchmark           - do the real benchmark 
+
+
+- name: Promt delete benchmark results
+  pause: 
+    prompt: "Please confirm you want to remove all possibly existing benchmark results in {{ bench_linpack__result_path }}! Press return to continue. Press Ctrl+c and then 'a' to abort"
+  when: bench_linpack__skip_deletion_result_folder_promt == false
+
+- name: Promt delete benchmark results
+  pause: 
+    prompt: "The Becnhmark Result are on the target machine not on the ansible controler! Press return to continue. Press Ctrl+c and then 'a' to abort"
+  when: bench_linpack__skip_deletion_result_folder_promt == false
+
+- name: Clean benchmark result path
+  file:
+    state: absent
+    path: "{{ bench_linpack__result_path }}/"
+
+- name: Apache Bench ressorce limit loop
+  include_tasks: runtimes.yml
+  loop: "{{ bench_linpack__resource_limits }}"
+  loop_control:
+    loop_var: bench_loop_target_reccource_limit

@@ -1,0 +1,9 @@
+# defaults file for golang
+
+# required variables
+
+golang__dl_server: https://dl.google.com/go
+golang__package: go1.13.4.linux-amd64.tar.gz
+golang__path: /usr/local
+golang__work_dir: /opt/work/go
+golang__dir_owner: "{{ ansible_env.SUDO_USER }}"

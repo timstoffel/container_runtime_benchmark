@@ -1,0 +1,251 @@
+---
+# tasks file for apachebench.benchmark
+
+# Nested Loops
+# Ressource Limit     - use apachebench__resource_limits and set bench_loop_target_reccource_limit
+# Runtime             - use apachebench__runtimes and set bench_loop_target_runtime
+# Container           - use apachebench__target_images and set bench_loop_target_image_name
+# Number of instances - use apachebench__target_count and set bench_loop_target_image_count   
+# repeat              - repeats the bechmark as long as apachebench__repeat and set bench_loop_repeat_number
+# benchmark           - do the real benchmark <- this file
+
+# - name: debug
+#   debug:
+#     msg: "8{{ '%03d'|format(line_item|int) }}"
+#   with_sequence: count="{{ bench_loop_target_image_count }}"
+#   loop_control:
+#     loop_var: line_item
+
+
+
+- name: show loop vars
+  debug: 
+    msg: 
+      - "bench_loop_target_reccource_limit -> {{ bench_loop_target_reccource_limit }} bench_loop_target_runtime -> {{ bench_loop_target_runtime }}"
+      - "bench_loop_target_image_name -> {{ bench_loop_target_image_name }} bench_loop_target_image_count -> {{ bench_loop_target_image_count }}"
+      - "repeat run -> {{ bench_loop_repeat_number }}"
+
+- name: set benchmark output folder var
+  set_fact: bench_loop_result_path="{{ apachebench__result_path }}/{{ bench_loop_target_reccource_limit }}/{{bench_loop_target_runtime}}/{{ bench_loop_target_image_name }}/target_count_{{ bench_loop_target_image_count }}/repeat_{{ bench_loop_repeat_number }}"
+
+- name: show benchmark output folder var
+  debug: 
+    msg: "bench_loop_result_path -> {{ bench_loop_result_path }}"
+    verbosity: 1
+
+- name: Remove Docker Cache target
+  include_role:
+    name: docker_prune
+  vars:
+    docker_prune__remove_docker: false
+    docker_prune__supress_confirmation: true
+    docker_prune__clean_cache: false
+  when: apachebench__clean_docker_cache
+
+- name: Remove Docker Cache local
+  include_role:
+    name: docker_prune
+    apply:
+        delegate_to: 127.0.0.1
+        delegate_facts: True
+  vars:
+    docker_prune__remove_docker: false
+    docker_prune__supress_confirmation: true
+    docker_prune__clean_cache: false
+  when: apachebench__clean_docker_cache
+
+- name: set nabla flag
+  block:
+  - name: set nabla_runtime_flag if runntime is nabla
+    set_fact: nabla_runtime_flag=true container_flag='nabla'
+    when: 
+      - bench_loop_target_runtime == 'runnc'
+      - bench_loop_target_image_name != 'tomcat'
+      - bench_loop_target_image_name != 'ngnix'
+
+  - name: set nabla_runtime_flag if runntime is not nabla
+    set_fact: nabla_runtime_flag=false container_flag='legacy'
+    when: bench_loop_target_runtime != 'runnc'
+
+- name: set sepcific port for the different images
+  block:
+    - set_fact: container_target_port="5000"
+      when: bench_loop_target_image_name == 'python-tornado'
+
+    - set_fact: container_target_port="3000"
+      when: bench_loop_target_image_name == 'go-httpd'
+
+    - set_fact: container_target_port="8080"
+      when: bench_loop_target_image_name == 'node-express'
+
+    - set_fact: container_target_port="8080"
+      when: bench_loop_target_image_name == 'tomcat'
+
+    - set_fact: container_target_port="80"
+      when: bench_loop_target_image_name == 'nginx' or bench_loop_target_image_name == 'httpd' 
+
+- name: skip if nabla and ngnix/tomcat
+  block:
+  - name: Load Container Image from Cache 
+    include_tasks: load_target_images.yml
+    vars:
+      archive_image_key: "{{ bench_loop_target_image_name }}"
+
+  - name: Create target containers default limits
+    docker_container:
+      name: "bench-{{ bench_loop_target_image_name }}-{{ item_1 }}"
+      image: "bench-{{ bench_loop_target_image_name }}-{{ container_flag }}:1"
+      runtime: "{{ bench_loop_target_runtime }}"
+      ports:
+      - "8{{ '%03d'|format(item_1|int) }}:{{ container_target_port }}"
+    with_sequence: count="{{ bench_loop_target_image_count }}"
+    loop_control:
+      loop_var: item_1
+    when: bench_loop_target_reccource_limit == 'default'
+
+  - name: Create target containers min limits
+    shell:
+      cmd: "docker run -d -p 8{{ '%03d'|format(item_1|int) }}:{{ container_target_port }} --runtime={{ bench_loop_target_runtime }} --cpus=1 --memory=2G --name=bench-{{ bench_loop_target_image_name }}-{{ item_1 }} bench-{{ bench_loop_target_image_name }}-{{ container_flag }}:1"
+    args:
+      executable: /bin/bash
+    become: true
+    with_sequence: count="{{ bench_loop_target_image_count }}"
+    loop_control:
+      loop_var: item_1
+    when: bench_loop_target_reccource_limit == 'min'
+
+  - name: Create target containers max limits
+    shell:
+      cmd: "docker run -d -p 8{{ '%03d'|format(item_1|int) }}:{{ container_target_port }} --runtime={{ bench_loop_target_runtime }} --cpus={{ target_cpu_count }} --memory={{ target_ram_count }} --name=bench-{{ bench_loop_target_image_name }}-{{ item_1 }} bench-{{ bench_loop_target_image_name }}-{{ container_flag }}:1"
+    args:
+      executable: /bin/bash
+    become: true
+    with_sequence: count="{{ bench_loop_target_image_count }}"
+    loop_control:
+      loop_var: item_1
+    when: bench_loop_target_reccource_limit == 'max' and bench_loop_target_runtime != 'kata'
+
+  - name: Create target containers max limits
+    shell:
+      cmd: "docker run -d -p 8{{ '%03d'|format(item_1|int) }}:{{ container_target_port }} --runtime={{ bench_loop_target_runtime }} --cpus={{ target_cpu_count }} --memory={{ target__kata_ram_count }} --name=bench-{{ bench_loop_target_image_name }}-{{ item_1 }} bench-{{ bench_loop_target_image_name }}-{{ container_flag }}:1"
+    args:
+      executable: /bin/bash
+    become: true
+    with_sequence: count="{{ bench_loop_target_image_count }}"
+    loop_control:
+      loop_var: item_1
+    when: bench_loop_target_reccource_limit == 'max' and bench_loop_target_runtime == 'kata'
+
+
+  - name: Creates benchmark result folder
+    file:
+      path: "{{ bench_loop_result_path }}"
+      owner: "{{ ansible_env.SUDO_USER  }}"
+      group: "{{ ansible_env.SUDO_USER  }}"
+      mode: '0777'
+      state: directory
+    delegate_to: 127.0.0.1 
+
+  - name: show benchmark output folder var
+    debug: 
+      msg: "bench_loop_target_image_count -> {{ bench_loop_target_image_count }}"
+      verbosity: 1
+    delegate_to: 127.0.0.1
+    delegate_facts: True
+
+  - name: Creates workdir
+    file:
+      path: "{{ create_benchmark_images__archive_folder }}"
+      state: directory
+    delegate_to: 127.0.0.1
+    delegate_facts: True
+  
+  - pause:
+      prompt: "Wait some time to start the benchmark. Please don't stop."
+      seconds: "30"
+
+  - name: Load apache-bench docker images from archive
+    docker_image:
+      name: "bench-apche-bench"
+      tag: 1
+      push: no
+      load_path: "{{ create_benchmark_images__archive_folder }}/bench-apache-bench-legacy.tar"
+      source: load
+    delegate_to: 127.0.0.1
+    delegate_facts: True
+
+  # ab commands
+  # -c concurrency
+  # -t timelimit !!! set number of requests afterwards 
+  # -n number of requests
+  - name: Create benchmark containers
+    docker_container:
+      name: "apache-bench-{{ item_2 }}"
+      image: "bench-apache-bench:1"
+      command: "-c {{ apachebench__request_concurrency }} -t {{ apachebench__request_time_limit }} -n {{ apachebench__request_number }} http://{{ hostvars.cruncher.ansible_host }}:8{{ '%03d'|format(item_2|int) }}/"
+    with_sequence: count="{{ bench_loop_target_image_count }}"
+    loop_control:
+      loop_var: item_2
+    delegate_to: 127.0.0.1
+    delegate_facts: True
+
+  - name: collect ram usage of the target containers
+    shell:
+      cmd: "awk '/^Mem/ {print $3}' <(free -m)"
+    args:
+      executable: /bin/bash
+    become: true
+    register: free_output
+
+  - name: Write ram usage to file
+    copy:
+      content: "{{ free_output.stdout }}"
+      dest: "{{ bench_loop_result_path }}/ram.txt"
+    delegate_to: 127.0.0.1
+    delegate_facts: True
+    become: true
+
+  - pause:
+      prompt: "Wait some time to finish the benchmark run. Please don't stop."
+      seconds: "{{ apachebench__benchmark_time_limit }}"
+
+  - name: collect logs of the benchmark containers
+    shell:
+      cmd: "docker logs apache-bench-{{ item_3|string }} >& {{ item_3|string }}.txt"
+      chdir: "{{ bench_loop_result_path }}"
+    args:
+      executable: /bin/bash
+    with_sequence: count="{{ bench_loop_target_image_count }}"
+    loop_control:
+      loop_var: item_3
+    delegate_to: 127.0.0.1
+    delegate_facts: True
+    become: true
+
+  - name: show log command
+    debug: 
+      msg: 
+        - "docker logs apache-bench-{{ bench_loop_target_image_count }} > {{ bench_loop_target_image_count }}.txt"
+        -  "{{ bench_loop_result_path }}"
+      verbosity: 1
+    delegate_to: 127.0.0.1
+    delegate_facts: True
+
+  - name: Check if Log Files are correct
+    block:
+      - name: "Searching for a String"
+        shell: "grep 'apr_socket_recv: Connection refused' {{ bench_loop_result_path }}/*.txt"
+        register: ab_error
+        ignore_errors: true
+        
+      - name: "sample task in case the String present in the file"
+        fail: 
+          msg: "One Container Benchmark failed"
+        when: ab_error.stdout != ""
+
+      - name: show log command
+        debug: 
+          msg: 
+            - "{{ ab_error }}"
+
+    when: apachebench__error_check

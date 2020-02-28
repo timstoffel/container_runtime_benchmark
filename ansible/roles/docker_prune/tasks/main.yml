@@ -1,0 +1,43 @@
+---
+# tasks file for docker_prune
+
+- name: Fail, when not Debian
+  fail: 
+    msg: "The role is designed only for Debian"
+  when: ansible_distribution != 'Debian'
+
+- name: Promt delete all containers
+  pause: 
+    prompt: 'Please confirm you want to remove all running/stopped containers! Press return to continue. Press Ctrl+c and then "a" to abort'
+  when: docker_prune__supress_confirmation == false
+
+- name: stop all docker containers
+  shell: docker stop $(docker ps -a -q)
+  ignore_errors: true
+
+- name: kill all docker containers
+  shell: docker kill $(docker ps -a -q)
+  ignore_errors: true
+
+- name: remove all docker containers
+  shell: docker rm $(docker ps -a -q)
+  ignore_errors: true
+
+- name: clean docker cache
+  shell: docker system prune -a -f
+  ignore_errors: true
+  when: docker_prune__clean_cache
+
+- name: stop docker service
+  systemd:
+    name: docker-ce
+    state: stopped
+  when: docker_prune__remove_docker   
+
+- name: remove docker app
+  apt:
+    name: docker-ce
+    state: absent   
+    autoremove: true
+    purge: true
+  when: docker_prune__remove_docker 

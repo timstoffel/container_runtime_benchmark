@@ -1,0 +1,33 @@
+---
+# tasks file for kata_containers
+
+- name: Fail, when not Debian
+  fail: 
+    msg: "The role is designed only for Debian"
+  when: ansible_distribution != 'Debian'
+
+- name: Add Kata apt key
+  apt_key:
+    url: "http://download.opensuse.org/repositories/home:/katacontainers:/releases:/{{ kata__release_arch }}:/{{ kata__release_branch }}/Debian_{{ ansible_distribution_major_version }}/Release.key"
+    state: present
+  register: add_repository_key
+
+- name: Add Kata apt repo
+  apt_repository:
+    repo: "deb http://download.opensuse.org/repositories/home:/katacontainers:/releases:/{{ kata__release_arch }}:/{{ kata__release_branch }}/Debian_{{ ansible_distribution_major_version }}/ /"
+    state: present
+
+- name: Install Kata packages
+  apt:
+    pkg:
+      - kata-runtime
+      - kata-proxy
+      - kata-shim
+    update_cache: true
+    state: present
+
+- name: Include Firecracker installation
+  include_tasks: install_firecracker.yml
+  when: kata__install_firecracker or kata__update_firecracker
+
+# If config is neccesary: https://github.com/mrlesmithjr/ansible-kata-containers/blob/master/templates/etc/kata-containers/configuration.toml.j2

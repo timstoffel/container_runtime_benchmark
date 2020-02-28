@@ -1,0 +1,112 @@
+---
+# tasks file for em.nablacontainer
+
+- name: Fail, when not Debian
+  fail: 
+    msg: "The role is designed only for Debian"
+  when: ansible_distribution != 'Debian'
+
+- name: Check that the Nabla runnc exists
+  stat:
+    path: "/usr/local/bin/runnc"
+  register: nabla_exists
+
+- name: set value in dict
+  block:
+    - name: set nabla exists
+      set_fact:
+        nabla_runtime:
+          nabla:
+            exists: true
+
+    - name: merge dicts
+      set_fact:
+        docker_patch_deamon__runtimes: "{{ docker_patch_deamon__runtimes |combine(nabla_runtime, recursive=True) }}"
+
+  when: nabla_exists.stat.exists
+
+- name: Check that the Kata Runtime exists
+  stat:
+    path: "/usr/bin/kata-runtime"
+  register: kata_exists
+
+- name: set value in dict
+  block:
+    - name: set kata exists
+      set_fact:
+        kata_runtime:
+          kata:
+            exists: true
+
+    - name: merge dicts
+      set_fact:
+        docker_patch_deamon__runtimes: "{{ docker_patch_deamon__runtimes |combine(kata_runtime, recursive=True) }}"
+
+  when: kata_exists.stat.exists
+
+- name: Check that the Kata Firecracker Runtime exists
+  stat:
+    path: "/opt/kata/bin/kata-fc"
+  register: kata_fc_exists
+
+- name: set value in dict
+  block:
+    - name: set kata_fc exists
+      set_fact:
+        kata_fc_runtime:
+          kata_fc:
+            exists: true
+
+    - name: merge dicts
+      set_fact:
+        docker_patch_deamon__runtimes: "{{ docker_patch_deamon__runtimes |combine(kata_fc_runtime, recursive=True) }}"
+
+  when: kata_fc_exists.stat.exists
+
+- name: Check that the gVisor runnc exists
+  stat:
+    path: "/usr/bin/runsc"
+  register: gvisor_exists
+
+- name: set value in dict
+  block:
+    - name: set gvisor exists
+      set_fact:
+        gvisor_runtime:
+          gvisor:
+            exists: true
+
+    - name: merge dicts
+      set_fact:
+        docker_patch_deamon__runtimes: "{{ docker_patch_deamon__runtimes |combine(gvisor_runtime, recursive=True) }}"
+
+    - name: set gvisor_kvm exists
+      set_fact:
+        gvisor_kvm_runtime:
+          gvisor_kvm:
+            exists: true
+      when: gvisor__enable_kvm_plattform
+
+    - name: merge dicts
+      set_fact:
+        docker_patch_deamon__runtimes: "{{ docker_patch_deamon__runtimes |combine(gvisor_kvm_runtime, recursive=True) }}"
+      when: gvisor__enable_kvm_plattform
+
+  when: gvisor_exists.stat.exists
+
+- debug:
+    msg: "{{ docker_patch_deamon__runtimes }}"
+
+
+- name: Configure Docker daemon options (json)
+  template:
+    src: "daemon.json.j2"
+    dest: "/etc/docker/daemon.json"
+    owner: "root"
+    group: "root"
+    mode: "0644"
+  notify: ["Restart Docker"]
+
+  # Inspiration for the dict combining comes from 
+  # https://www.jeffgeerling.com/blog/2017/changing-deeply-nested-dict-variable-ansible-playbook
+  # https://serverfault.com/questions/685673/appending-to-lists-or-adding-keys-to-dictionaries-in-ansible

@@ -1,0 +1,31 @@
+---
+# defauts file for bench_iperf
+
+bench_iperf__runtimes:
+- default     # docker
+- kata
+- katafc
+- runsc       # gVisor
+#- runsck     # gVisor KVM Plattform
+
+bench_iperf__resource_limits:
+- default
+- min # 1vCPU and 2g
+- max # max from target system
+
+bench_iperf__duration:
+- 10
+- 30
+- 60
+- 120
+- 240
+
+bench_iperf__repeat: 35
+
+bench_iperf__clean_docker_cache: true
+bench_iperf__skip_deletion_result_folder_promt: false
+
+bench_iperf__result_path: /opt/benchmark_results/bench_iperf
+
+# time
+# 4 runtimes, 3 limits, 35 repeats, 2 bechmarks, 20 s benchmark -> 5 h

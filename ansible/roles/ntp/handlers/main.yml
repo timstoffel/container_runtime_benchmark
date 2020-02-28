@@ -1,0 +1,6 @@
+---
+# handlers file for ntp
+- name: restart timedatectl service
+  systemd:
+    state: restarted
+    name: systemd-timesyncd 

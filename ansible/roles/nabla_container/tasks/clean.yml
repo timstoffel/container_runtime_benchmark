@@ -1,0 +1,11 @@
+---
+# cleanup file for em.nablacontainer
+
+- name: Delete existing dist folder
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ golang__work_dir }}/runnc/"
+    - /usr/local/bin/runnc
+    - /usr/local/bin/nabla-run

@@ -1,0 +1,42 @@
+---
+# defauts file for bench_time
+
+bench_time__target_images:
+- go-httpd
+- node-express
+- python-tornado
+- redis-test
+
+bench_time__not_nabla_images:
+- nginx
+- busybox
+- alpine
+- postgres
+- ubuntu
+- mongo
+- traefik
+- httpd
+- tomcat
+
+bench_time__runtimes:
+- default     # docker
+- kata
+- katafc
+- runsc       # gVisor
+- runnc       # nabla
+#- runsck     # gVisor KVM Plattform
+
+bench_time__resource_limits:
+- default
+- min # 1vCPU and 2g
+- max # max from target system
+
+bench_time__repeat: 35
+
+bench_time__clean_docker_cache: true
+bench_time__skip_deletion_result_folder_promt: false
+
+bench_time__result_path: /opt/benchmark_results/bench_time
+
+# time:
+# 13 images, 5 runtimes, 3 limits, 35 wdh, dauer von ca 20 s -> 38 h
